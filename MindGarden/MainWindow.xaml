@@ -5,7 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MindGarden"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Mind Garden" Height="800" Width="1280"
+        WindowStartupLocation="CenterScreen"
+        Background="#eaf7e5"
+        WindowStyle="None"
+        KeyDown="Window_KeyDown">
     <Grid>
         <Canvas Name="GardenCanvas" Background="#EAF7E5">
         </Canvas>
@@ -16,6 +20,16 @@
                        FontSize="16"
                        Text="Rośliny: 0"/>
         </DockPanel>
+
+        <TextBlock x:Name="CalmMessageText"
+                   VerticalAlignment="Bottom"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20"
+                   FontSize="18"
+                   Foreground="#445544"
+                   Text=""
+                   TextAlignment="Center"/>
+
         <Grid x:Name="MenuOverlay" Background="#80000000" Visibility="Visible">
             <Border Width="300"
                     Padding="20"
@@ -35,11 +49,17 @@
                             Margin="0,5"
                             Padding="8"
                             Click="NewGameButton_Click"/>
+                    <Button x:Name="ResumeButton"
+                            Content="Wznów"
+                            Margin="0,15,0,5"
+                            Padding="8"
+                            Click="ResumeButton_Click" Visibility="Collapsed"/>
                     <Button x:Name="ExitButton"
                             Content="Wyjdź"
                             Margin="0,15,0,0"
                             Padding="8"
                             Click="ExitButton_Click"/>
+
                 </StackPanel>
             </Border>
         </Grid>
