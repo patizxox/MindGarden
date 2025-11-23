@@ -128,5 +128,17 @@ namespace MindGarden
             }
         }
 
+        private void GardenCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if(_menuOpen || _game == null)
+            {
+                ShowCalmMessage("Gra jeszcze nie działa lub jest w menu.");
+                return;
+            }
+
+            var p = e.GetPosition(GardenCanvas);
+            ShowCalmMessage($"Kliknęłaś w ogród w punkcie ({p.X:F0}, {p.Y:F0}). Prawdziwa logika pojawi się później.");
+
+        }
     }
 }

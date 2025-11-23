@@ -11,7 +11,7 @@
         WindowStyle="None"
         KeyDown="Window_KeyDown">
     <Grid>
-        <Canvas Name="GardenCanvas" Background="#EAF7E5">
+        <Canvas Name="GardenCanvas" Background="#EAF7E5" MouseLeftButtonDown="GardenCanvas_MouseLeftButtonDown">
         </Canvas>
         <DockPanel VerticalAlignment="Top" Background="#cfe8cf" Height="40">
             <TextBlock x:Name="PlantCountText"
