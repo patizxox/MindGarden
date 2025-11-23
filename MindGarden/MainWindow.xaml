@@ -7,6 +7,41 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-
+        <Canvas Name="GardenCanvas" Background="#EAF7E5">
+        </Canvas>
+        <DockPanel VerticalAlignment="Top" Background="#cfe8cf" Height="40">
+            <TextBlock x:Name="PlantCountText"
+                       Margin="10,0"
+                       VerticalAlignment="Center"
+                       FontSize="16"
+                       Text="Rośliny: 0"/>
+        </DockPanel>
+        <Grid x:Name="MenuOverlay" Background="#80000000" Visibility="Visible">
+            <Border Width="300"
+                    Padding="20"
+                    Background="#f3fff3"
+                    CornerRadius="16"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Mind Garden"
+                               FontSize="24"
+                               FontWeight="Bold"
+                               Foreground="#334433"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,10"/>
+                    <Button x:Name="NewGameButton"
+                            Content="Nowa gra"
+                            Margin="0,5"
+                            Padding="8"
+                            Click="NewGameButton_Click"/>
+                    <Button x:Name="ExitButton"
+                            Content="Wyjdź"
+                            Margin="0,15,0,0"
+                            Padding="8"
+                            Click="ExitButton_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

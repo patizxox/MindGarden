@@ -16,9 +16,21 @@ namespace MindGarden
     /// </summary>
     public partial class MainWindow : Window
     {
+        private bool _menuOpen = true;
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        private void NewGameButton_Click(object sender, RoutedEventArgs e)
+        {
+            _menuOpen = false;
+            MenuOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void ExitButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
     }
 }
