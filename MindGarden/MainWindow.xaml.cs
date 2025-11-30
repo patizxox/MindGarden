@@ -6,6 +6,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
@@ -38,28 +39,96 @@ namespace MindGarden
 
     public class GameController
     {
+        private readonly Canvas _canvas;
         private readonly Dictionary<GameStage, StageConfig> _cfg;
         private readonly Random _rand;
-        private readonly DispatcherTimer _timer;
+        private readonly LightSpot _spot;
 
         public GameStage Stage { get; private set; } = GameStage.Stage1;
 
-        public event Action? TickHappened;
-
-        public GameController(Dictionary<GameStage, StageConfig> cfg, Random rand)
+        public GameController(Canvas canvas, Dictionary<GameStage, StageConfig> cfg, Random rand)
         {
+            _canvas = canvas;
             _cfg = cfg;
             _rand = rand;
-            _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromSeconds(2);
-            _timer.Tick += OnTick;
-            _timer.Start();
+            _spot = new LightSpot(canvas);
+            ScheduleNextSpot();
         }
 
-        private void OnTick(object? sender, EventArgs e)
+        public void OnClick(Point p, Action<Point> onPlant)
         {
-            TickHappened?.Invoke();
+            if (_spot.Hit(p))
+            {
+                onPlant(p);
+                ScheduleNextSpot();
+            }
+            else
+            {
+                // na razie nic
+            }
         }
+
+        private async void ScheduleNextSpot()
+        {
+            _spot.Hide();
+            var s = _cfg[Stage];
+            var delay = _rand.Next((int)s.LightMinDelay.TotalMilliseconds, (int)s.LightMaxDelay.TotalMilliseconds);
+            await Task.Delay(delay);
+
+            double r = 40;
+            double x = _rand.Next((int)r, (int)Math.Max(r, _canvas.ActualWidth - r));
+            double y = _rand.Next((int)(r + 40), (int)Math.Max(r + 40, _canvas.ActualHeight - r));
+
+            _spot.ShowAt(new Point(x, y), r);
+        }
+    }
+    public class LightSpot
+    {
+        private readonly Canvas _canvas;
+        private readonly Ellipse _shape = new();
+        private Point _pos;
+        private double _radius;
+
+        public Rect Bounds => new(_pos.X - _radius, _pos.Y - _radius, _radius * 2, _radius * 2);
+
+        public LightSpot(Canvas canvas)
+        {
+            _canvas = canvas;
+            _shape.Width = _shape.Height = 80;
+            _shape.Fill = new SolidColorBrush(Color.FromArgb(90, 255, 255, 180));
+            _shape.Stroke = Brushes.White;
+            _shape.StrokeThickness = 1.5;
+            _shape.IsHitTestVisible = false;
+        }
+
+        public void ShowAt(Point p, double radius = 40)
+        {
+            _pos = p;
+            _radius = radius;
+            _shape.Width = _shape.Height = radius * 2;
+            if (!_canvas.Children.Contains(_shape)) _canvas.Children.Add(_shape);
+            Canvas.SetLeft(_shape, p.X - radius);
+            Canvas.SetTop(_shape, p.Y - radius);
+
+            var brush = (SolidColorBrush)_shape.Fill;
+            var anim = new DoubleAnimation
+            {
+                From = 0.35,
+                To = 0.75,
+                Duration = TimeSpan.FromMilliseconds(900),
+                AutoReverse = true,
+                RepeatBehavior = RepeatBehavior.Forever
+            };
+            brush.BeginAnimation(SolidColorBrush.OpacityProperty, anim);
+        }
+
+        public void Hide()
+        {
+            if (_canvas.Children.Contains(_shape)) _canvas.Children.Remove(_shape);
+        }
+
+        public bool Hit(Point click) =>
+            (click.X - _pos.X) * (click.X - _pos.X) + (click.Y - _pos.Y) * (click.Y - _pos.Y) <= _radius * _radius;
     }
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -82,11 +151,7 @@ namespace MindGarden
             ResumeButton.Visibility = Visibility.Visible;
 
             _stages = GamePresets.GetPresets();
-            _game = new GameController(_stages, new Random());
-            _game.TickHappened += () =>
-            {
-                ShowCalmMessage("To byłby moment, gdy pojawia się sygnał w grze.");
-            };
+            _game = new GameController(GardenCanvas, _stages, new Random());
 
             ShowCalmMessage("Rozpoczynasz pierwszy etap. Poczekaj na sygnał.");
         }
@@ -132,13 +197,17 @@ namespace MindGarden
         {
             if(_menuOpen || _game == null)
             {
-                ShowCalmMessage("Gra jeszcze nie działa lub jest w menu.");
+                
                 return;
             }
 
             var p = e.GetPosition(GardenCanvas);
-            ShowCalmMessage($"Kliknęłaś w ogród w punkcie ({p.X:F0}, {p.Y:F0}). Prawdziwa logika pojawi się później.");
+            _game.OnClick(p, pos =>
+            {
+                ShowCalmMessage("Kliknięto w światełko");
+            });
 
         }
     }
+
 }
