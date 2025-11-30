@@ -1,5 +1,10 @@
 ﻿using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
+using System.Windows.Media;
+using System.Windows.Controls;
+using System.Windows.Shapes;
+using System.Windows.Threading;
 namespace MindGarden
 {
     /// <summary>
@@ -8,37 +13,61 @@ namespace MindGarden
     public partial class MainWindow : Window
     {
         private bool _menuOpen = true;
+        private int _plantCount = 0;
+        private readonly Random _rand = new();
         private GameController? _game;
         private Dictionary<GameStage, StageConfig> _stages = null!;
+
         public MainWindow()
         {
             InitializeComponent();
+            StartDayNightCycle();
             ShowCalmMessage("Witaj w Mind Garden. Zacznij, gdy będziesz gotowa.");
         }
 
-        private void NewGameButton_Click(object sender, RoutedEventArgs e)
+        private void StartNewGame()
         {
+            GardenCanvas.Children.Clear();
+            _plantCount = 0;
+            _stages = GamePresets.GetPresets();
+            _game = new GameController(GardenCanvas, _stages, _rand);
+            _game.StageAdvanced += () => ShowCalmMessage("Świetnie. Widzisz, jak ogród rośnie, kiedy dajesz mu czas.");
+            _game.Finished += ShowSummary;
             _menuOpen = false;
             MenuOverlay.Visibility = Visibility.Collapsed;
             ResumeButton.Visibility = Visibility.Visible;
-
-            _stages = GamePresets.GetPresets();
-            _game = new GameController(GardenCanvas, _stages, new Random());
-
-            ShowCalmMessage("Rozpoczynasz pierwszy etap. Poczekaj na sygnał.");
+            UpdateHud();
+            ShowCalmMessage("Skup się na światełku, kliknij i poczekaj, aż nasiono wyrośnie.");
         }
 
-
-        private void ExitButton_Click(object sender, RoutedEventArgs e)
+        private void GardenCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            Close();
+            if (_menuOpen || _game == null) return;
+
+            var p = e.GetPosition(GardenCanvas);
+            _game.OnClick(p, pos =>
+            {
+                var cfg = _stages[_game.Stage];
+                var baseMs = _rand.Next((int)cfg.GrowMin.TotalMilliseconds, (int)cfg.GrowMax.TotalMilliseconds);
+                var growMs = (int)(baseMs / Math.Max(0.1, _game.GrowthMultiplier));
+
+                _ = new Seed(GardenCanvas, pos.X, pos.Y, TimeSpan.FromMilliseconds(growMs));
+                _plantCount++;
+                UpdateHud();
+                ShowCalmMessage("Trafiłaś w światło. Teraz nasiono potrzebuje czasu, żeby wyrosnąć.");
+            });
         }
 
-        private void ResumeButton_Click(Object sender, RoutedEventArgs e)
+        private void UpdateHud()
         {
-            _menuOpen = false;
-            MenuOverlay.Visibility = Visibility.Collapsed;
-            ShowCalmMessage("Wróciłaś do ogrodu.");
+            if (_game == null)
+            {
+                PlantCountText.Text = $"Rośliny: 0";
+                return;
+            }
+
+            PlantCountText.Text =
+                $"Rośliny: {_plantCount}  |  Etap: {_game.Stage}  |  Mnożnik: {_game.GrowthMultiplier:F2}x";
         }
 
         private void ShowCalmMessage(string text)
@@ -46,40 +75,120 @@ namespace MindGarden
             CalmMessageText.Text = text;
         }
 
+        private void ShowSummary()
+        {
+            _menuOpen = true;
+            MenuOverlay.Visibility = Visibility.Visible;
+            if (_game != null) _game.Pause();
+            ResumeButton.Visibility = Visibility.Collapsed;
+            ShowCalmMessage($"Gratulacje. Zasadziłaś {_plantCount} roślin. Zatrzymaj się na chwilę i popatrz na swój ogród.");
+        }
+
+        private void StartDayNightCycle()
+        {
+            if (GardenCanvas.Background is SolidColorBrush brush)
+            {
+                var anim = new ColorAnimation
+                {
+                    From = brush.Color,
+                    To = Color.FromRgb(180, 200, 230),
+                    Duration = TimeSpan.FromSeconds(20),
+                    AutoReverse = true,
+                    RepeatBehavior = RepeatBehavior.Forever
+                };
+                brush.BeginAnimation(SolidColorBrush.ColorProperty, anim);
+            }
+        }
+
+        private void NewGameButton_Click(object sender, RoutedEventArgs e)
+        {
+            StartNewGame();
+        }
+
+        private void ResumeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (_game == null) return;
+            _menuOpen = false;
+            MenuOverlay.Visibility = Visibility.Collapsed;
+            _game.Resume();
+            ShowCalmMessage("Wróciłaś do ogrodu. Działaj tylko wtedy, gdy pojawi się światło.");
+        }
+
+        private void ExitButton_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Escape) return;
+            if (_game == null || _game.Stage == GameStage.Finished) return;
 
             if (_menuOpen)
             {
                 _menuOpen = false;
                 MenuOverlay.Visibility = Visibility.Collapsed;
-                ShowCalmMessage("Wróciłaś do ogrodu.");
+                _game.Resume();
+                ShowCalmMessage("Wróciłaś do ogrodu. Działaj tylko wtedy, gdy pojawi się światło.");
             }
             else
             {
                 _menuOpen = true;
                 MenuOverlay.Visibility = Visibility.Visible;
+                _game.Pause();
                 ShowCalmMessage("Zatrzymałaś grę. Możesz odpocząć albo wrócić, gdy będziesz gotowa.");
             }
         }
-
-        private void GardenCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if(_menuOpen || _game == null)
-            {
-                
-                return;
-            }
-
-            var p = e.GetPosition(GardenCanvas);
-            _game.OnClick(p, pos =>
-            {
-                ShowCalmMessage("Kliknięto w światełko");
-            });
-
-        }
     }
 
+    internal class Seed
+    {
+        private readonly Canvas _canvas;
+        private readonly double _x;
+        private readonly double _y;
+        private readonly Ellipse _ellipse;
+        private readonly DispatcherTimer _timer;
+
+        public Seed(Canvas canvas, double x, double y, TimeSpan growTime)
+        {
+            _canvas = canvas;
+            _x = x;
+            _y = y;
+
+            _ellipse = new Ellipse
+            {
+                Width = 10,
+                Height = 15,
+                Fill = new SolidColorBrush(Colors.SaddleBrown)
+            };
+
+            Canvas.SetLeft(_ellipse, x - _ellipse.Width / 2);
+            Canvas.SetTop(_ellipse, y - _ellipse.Height / 2);
+            _canvas.Children.Add(_ellipse);
+
+            _timer = new DispatcherTimer
+            {
+                Interval = growTime
+            };
+            _timer.Tick += OnGrow;
+            _timer.Start();
+        }
+
+        private void OnGrow(object? sender, EventArgs e)
+        {
+            _timer.Stop();
+            _canvas.Children.Remove(_ellipse);
+
+            var plant = new Ellipse
+            {
+                Width = 30,
+                Height = 30,
+                Fill = new SolidColorBrush(Colors.ForestGreen)
+            };
+
+            Canvas.SetLeft(plant, _x - plant.Width / 2);
+            Canvas.SetTop(plant, _y - plant.Height / 2);
+            _canvas.Children.Add(plant);
+        }
+    }
 }
