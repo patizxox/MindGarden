@@ -10,6 +10,8 @@ namespace MindGarden
         private readonly Dictionary<GameStage, StageConfig> _cfg;
         private readonly Random _rand;
         private readonly LightSpot _spot;
+        public int Hits { get; private set; }
+        public int Misses { get; private set; }
 
         public GameStage Stage { get; private set; } = GameStage.Stage1;
         public int PlantsThisStage { get; private set; } = 0;
@@ -33,6 +35,7 @@ namespace MindGarden
 
             if (_spot.Hit(p))
             {
+                Hits++;
                 onPlant(p);
                 PlantsThisStage++;
                 GrowthMultiplier = Math.Min(1.5, GrowthMultiplier + 0.02);
@@ -41,6 +44,7 @@ namespace MindGarden
             }
             else
             {
+                Misses++;
                 GrowthMultiplier = Math.Max(0.5, GrowthMultiplier - 0.05);
             }
         }

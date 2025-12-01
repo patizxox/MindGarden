@@ -2,9 +2,6 @@
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media;
-using System.Windows.Controls;
-using System.Windows.Shapes;
-using System.Windows.Threading;
 namespace MindGarden
 {
     /// <summary>
@@ -51,7 +48,7 @@ namespace MindGarden
                 var baseMs = _rand.Next((int)cfg.GrowMin.TotalMilliseconds, (int)cfg.GrowMax.TotalMilliseconds);
                 var growMs = (int)(baseMs / Math.Max(0.1, _game.GrowthMultiplier));
 
-                _ = new Seed(GardenCanvas, pos.X, pos.Y, TimeSpan.FromMilliseconds(growMs));
+                _ = new Seed(GardenCanvas, pos.X, pos.Y, _rand, TimeSpan.FromMilliseconds(growMs));
                 _plantCount++;
                 UpdateHud();
                 ShowCalmMessage("Trafiłaś w światło. Teraz nasiono potrzebuje czasu, żeby wyrosnąć.");
@@ -81,7 +78,14 @@ namespace MindGarden
             MenuOverlay.Visibility = Visibility.Visible;
             if (_game != null) _game.Pause();
             ResumeButton.Visibility = Visibility.Collapsed;
-            ShowCalmMessage($"Gratulacje. Zasadziłaś {_plantCount} roślin. Zatrzymaj się na chwilę i popatrz na swój ogród.");
+            var hits = _game?.Hits ?? 0;
+            var misses = _game?.Misses ?? 0;
+
+            ShowCalmMessage(
+                $"Gratulacje. Zasadziłaś {_plantCount} roślin.\n" +
+                $"Trafione kliknięcia: {hits}, impulsywne kliknięcia: {misses}.\n" +
+                $"Zatrzymaj się na chwilę i popatrz na swój ogród."
+            );
         }
 
         private void StartDayNightCycle()
@@ -138,57 +142,6 @@ namespace MindGarden
                 _game.Pause();
                 ShowCalmMessage("Zatrzymałaś grę. Możesz odpocząć albo wrócić, gdy będziesz gotowa.");
             }
-        }
-    }
-
-    internal class Seed
-    {
-        private readonly Canvas _canvas;
-        private readonly double _x;
-        private readonly double _y;
-        private readonly Ellipse _ellipse;
-        private readonly DispatcherTimer _timer;
-
-        public Seed(Canvas canvas, double x, double y, TimeSpan growTime)
-        {
-            _canvas = canvas;
-            _x = x;
-            _y = y;
-
-            _ellipse = new Ellipse
-            {
-                Width = 10,
-                Height = 15,
-                Fill = new SolidColorBrush(Colors.SaddleBrown)
-            };
-
-            Canvas.SetLeft(_ellipse, x - _ellipse.Width / 2);
-            Canvas.SetTop(_ellipse, y - _ellipse.Height / 2);
-            _canvas.Children.Add(_ellipse);
-
-            _timer = new DispatcherTimer
-            {
-                Interval = growTime
-            };
-            _timer.Tick += OnGrow;
-            _timer.Start();
-        }
-
-        private void OnGrow(object? sender, EventArgs e)
-        {
-            _timer.Stop();
-            _canvas.Children.Remove(_ellipse);
-
-            var plant = new Ellipse
-            {
-                Width = 30,
-                Height = 30,
-                Fill = new SolidColorBrush(Colors.ForestGreen)
-            };
-
-            Canvas.SetLeft(plant, _x - plant.Width / 2);
-            Canvas.SetTop(plant, _y - plant.Height / 2);
-            _canvas.Children.Add(plant);
         }
     }
 }
