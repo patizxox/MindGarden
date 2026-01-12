@@ -14,12 +14,33 @@ namespace MindGarden
         private readonly Random _rand = new();
         private GameController? _game;
         private Dictionary<GameStage, StageConfig> _stages = null!;
+        private MediaPlayer _bgMusic = new();
 
         public MainWindow()
         {
             InitializeComponent();
             StartDayNightCycle();
+            InitializeBackgroundMusic();
             ShowCalmMessage("Witaj w Mind Garden. Zacznij, gdy będziesz gotowa.");
+        }
+
+        private void InitializeBackgroundMusic()
+        {
+            try
+            {
+                _bgMusic.Open(new Uri("Resources/music.mp3", UriKind.Relative));
+                _bgMusic.MediaEnded += (s, e) =>
+                {
+                    _bgMusic.Position = TimeSpan.Zero;
+                    _bgMusic.Play();
+                };
+                _bgMusic.Volume = 0.5;
+                _bgMusic.Play();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error playing music: {ex.Message}");
+            }
         }
 
         private void StartNewGame()
@@ -141,6 +162,14 @@ namespace MindGarden
                 MenuOverlay.Visibility = Visibility.Visible;
                 _game.Pause();
                 ShowCalmMessage("Zatrzymałaś grę. Możesz odpocząć albo wrócić, gdy będziesz gotowa.");
+            }
+        }
+
+        private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_bgMusic != null)
+            {
+                _bgMusic.Volume = e.NewValue;
             }
         }
     }

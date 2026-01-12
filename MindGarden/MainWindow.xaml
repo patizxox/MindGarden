@@ -44,6 +44,8 @@
                                Foreground="#334433"
                                HorizontalAlignment="Center"
                                Margin="0,0,0,10"/>
+                    <TextBlock Text="Głośność" HorizontalAlignment="Center" Margin="0,5,0,0" Foreground="#334433"/>
+                    <Slider x:Name="VolumeSlider" Width="200" Minimum="0" Maximum="1" Value="0.5" ValueChanged="VolumeSlider_ValueChanged" Margin="0,0,0,15"/>
                     <Button x:Name="NewGameButton"
                             Content="Nowa gra"
                             Margin="0,5"

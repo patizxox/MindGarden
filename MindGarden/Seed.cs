@@ -130,15 +130,15 @@ internal class Seed
 
         _canvas.Children.Remove(_ellipse);
 
-        byte[][] choices = { Assets.grass, Assets.plant, Assets.tree };
-        byte[] blob = choices[_rand.Next(choices.Length)];
+        string[] files = Directory.GetFiles(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources"), "*.png");
+        string randomFile = files[_rand.Next(files.Length)];
 
         var img = new Image
         {
             Width = 64,
             Height = 64,
             Stretch = Stretch.Uniform,
-            Source = LoadFromBytes(blob),
+            Source = LoadFromFile(randomFile),
             SnapsToDevicePixels = true,
             RenderTransformOrigin = new System.Windows.Point(0.5, 0.5),
             RenderTransform = new ScaleTransform(0, 0)
@@ -158,13 +158,12 @@ internal class Seed
         ((ScaleTransform)img.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty, pop);
         ((ScaleTransform)img.RenderTransform).BeginAnimation(ScaleTransform.ScaleYProperty, pop);
     }
-    private static ImageSource LoadFromBytes(byte[] data)
+    private static ImageSource LoadFromFile(string path)
     {
-        using var ms = new MemoryStream(data);
         var bmp = new BitmapImage();
         bmp.BeginInit();
         bmp.CacheOption = BitmapCacheOption.OnLoad;
-        bmp.StreamSource = ms;
+        bmp.UriSource = new Uri(path, UriKind.Absolute);
         bmp.EndInit();
         bmp.Freeze();
         return bmp;
