@@ -54,6 +54,7 @@ namespace MindGarden
             _menuOpen = false;
             MenuOverlay.Visibility = Visibility.Collapsed;
             ResumeButton.Visibility = Visibility.Visible;
+            ViewGardenButton.Visibility = Visibility.Collapsed;
             UpdateHud();
             ShowCalmMessage("Skup się na światełku, kliknij i poczekaj, aż nasiono wyrośnie.");
         }
@@ -84,13 +85,30 @@ namespace MindGarden
                 return;
             }
 
+            string stageName = _game.Stage switch
+            {
+                GameStage.Stage1 => "Poziom 1",
+                GameStage.Stage2 => "Poziom 2",
+                GameStage.Stage3 => "Poziom 3",
+                GameStage.Finished => "Koniec",
+                _ => "Poziom ?"
+            };
+
             PlantCountText.Text =
-                $"Rośliny: {_plantCount}  |  Etap: {_game.Stage}  |  Mnożnik: {_game.GrowthMultiplier:F2}x";
+                $"Rośliny: {_plantCount}  |  {stageName}  |  Mnożnik: {_game.GrowthMultiplier:F2}x";
         }
 
         private void ShowCalmMessage(string text)
         {
             CalmMessageText.Text = text;
+        }
+
+        private string GetStatsString()
+        {
+            var hits = _game?.Hits ?? 0;
+            var misses = _game?.Misses ?? 0;
+            return $"Gratulacje. Zasadziłaś {_plantCount} roślin.\n" +
+                   $"Trafione kliknięcia: {hits}, impulsywne kliknięcia: {misses}.";
         }
 
         private void ShowSummary()
@@ -99,12 +117,10 @@ namespace MindGarden
             MenuOverlay.Visibility = Visibility.Visible;
             if (_game != null) _game.Pause();
             ResumeButton.Visibility = Visibility.Collapsed;
-            var hits = _game?.Hits ?? 0;
-            var misses = _game?.Misses ?? 0;
-
+            ViewGardenButton.Visibility = Visibility.Visible;
+            
             ShowCalmMessage(
-                $"Gratulacje. Zasadziłaś {_plantCount} roślin.\n" +
-                $"Trafione kliknięcia: {hits}, impulsywne kliknięcia: {misses}.\n" +
+                $"{GetStatsString()}\n" +
                 $"Zatrzymaj się na chwilę i popatrz na swój ogród."
             );
         }
@@ -139,6 +155,13 @@ namespace MindGarden
             ShowCalmMessage("Wróciłaś do ogrodu. Działaj tylko wtedy, gdy pojawi się światło.");
         }
 
+        private void ViewGardenButton_Click(object sender, RoutedEventArgs e)
+        {
+            _menuOpen = false;
+            MenuOverlay.Visibility = Visibility.Collapsed;
+            ShowCalmMessage($"{GetStatsString()}\nPodziwiaj swój ogród. Naciśnij ESC, aby wrócić do menu.");
+        }
+
         private void ExitButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
@@ -147,21 +170,36 @@ namespace MindGarden
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key != Key.Escape) return;
-            if (_game == null || _game.Stage == GameStage.Finished) return;
+            if (_game == null) return;
 
             if (_menuOpen)
             {
                 _menuOpen = false;
                 MenuOverlay.Visibility = Visibility.Collapsed;
                 _game.Resume();
-                ShowCalmMessage("Wróciłaś do ogrodu. Działaj tylko wtedy, gdy pojawi się światło.");
+
+                if (_game.Stage == GameStage.Finished)
+                {
+                    ShowCalmMessage($"{GetStatsString()}\nPodziwiaj swój ogród. Naciśnij ESC, aby wrócić do menu.");
+                }
+                else
+                {
+                    ShowCalmMessage("Wróciłaś do ogrodu. Działaj tylko wtedy, gdy pojawi się światło.");
+                }
             }
             else
             {
-                _menuOpen = true;
-                MenuOverlay.Visibility = Visibility.Visible;
-                _game.Pause();
-                ShowCalmMessage("Zatrzymałaś grę. Możesz odpocząć albo wrócić, gdy będziesz gotowa.");
+                if (_game.Stage == GameStage.Finished)
+                {
+                    ShowSummary();
+                }
+                else
+                {
+                    _menuOpen = true;
+                    MenuOverlay.Visibility = Visibility.Visible;
+                    _game.Pause();
+                    ShowCalmMessage("Zatrzymałaś grę. Możesz odpocząć albo wrócić, gdy będziesz gotowa.");
+                }
             }
         }
 

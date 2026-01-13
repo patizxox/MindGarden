@@ -29,7 +29,14 @@ internal class Seed
         _y = y;
         _rand = rand;
 
-        var brush = new SolidColorBrush(Colors.SaddleBrown);
+
+        var brush = new RadialGradientBrush();
+        brush.GradientOrigin = new System.Windows.Point(0.3, 0.3);
+        brush.Center = new System.Windows.Point(0.5, 0.5);
+        brush.RadiusX = 0.5;
+        brush.RadiusY = 0.5;
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(161, 136, 127), 0.0));
+        brush.GradientStops.Add(new GradientStop(Color.FromRgb(93, 64, 55), 1.0));
         _ellipse = new Ellipse
         {
             Width = 10,
@@ -97,15 +104,26 @@ internal class Seed
 
     private void PreSproutCue()
     {
-        var brush = (SolidColorBrush)_ellipse.Fill;
+        var brush = (RadialGradientBrush)_ellipse.Fill;
         var to = Color.FromRgb(96, 160, 80);
+
+
         var colorAnim = new ColorAnimation
         {
             To = to,
             Duration = TimeSpan.FromMilliseconds(300),
             EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
         };
-        brush.BeginAnimation(SolidColorBrush.ColorProperty, colorAnim);
+        brush.GradientStops[0].BeginAnimation(GradientStop.ColorProperty, colorAnim);
+
+
+        var colorAnim2 = new ColorAnimation
+        {
+            To = Color.FromRgb(50, 90, 40),
+            Duration = TimeSpan.FromMilliseconds(300),
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+        };
+        brush.GradientStops[1].BeginAnimation(GradientStop.ColorProperty, colorAnim2);
 
         var scaleUp = new DoubleAnimation
         {

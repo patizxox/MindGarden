@@ -10,16 +10,65 @@
         Background="#eaf7e5"
         WindowStyle="None"
         KeyDown="Window_KeyDown">
+    <Window.Resources>
+        <Style x:Key="MenuButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#A5D6A7"/>
+            <Setter Property="Foreground" Value="#334433"/>
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="Padding" Value="20,8"/>
+            <Setter Property="Margin" Value="0,8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="20" Padding="{TemplateBinding Padding}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="5" Color="Black" Opacity="0.1" ShadowDepth="2"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="#81C784"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="RenderTransform">
+                        <Setter.Value>
+                            <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
     <Grid>
         <Canvas Name="GardenCanvas" Background="#EAF7E5" MouseLeftButtonDown="GardenCanvas_MouseLeftButtonDown">
         </Canvas>
-        <DockPanel VerticalAlignment="Top" Background="#cfe8cf" Height="40">
+        <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,30,0,0"
+                Background="#DDFFFFFF" CornerRadius="25" Padding="40,5">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" Color="#223322" Opacity="0.15" ShadowDepth="3"/>
+            </Border.Effect>
             <TextBlock x:Name="PlantCountText"
-                       Margin="10,0"
-                       VerticalAlignment="Center"
-                       FontSize="16"
+                       FontSize="28"
+                       FontFamily="Gabriola"
+                       FontWeight="Bold"
+                       Foreground="#2E7D32"
                        Text="Rośliny: 0"/>
-        </DockPanel>
+        </Border>
 
         <TextBlock x:Name="CalmMessageText"
                    VerticalAlignment="Bottom"
@@ -30,37 +79,79 @@
                    Text=""
                    TextAlignment="Center"/>
 
-        <Grid x:Name="MenuOverlay" Background="#80000000" Visibility="Visible">
-            <Border Width="300"
-                    Padding="20"
-                    Background="#f3fff3"
-                    CornerRadius="16"
+        <Grid x:Name="MenuOverlay" Background="#99000000" Visibility="Visible">
+            <Border Width="500"
+                    Padding="40"
+                    Background="#FAFFFA"
+                    CornerRadius="30"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" Color="Black" Opacity="0.5" ShadowDepth="8"/>
+                </Border.Effect>
                 <StackPanel>
-                    <TextBlock Text="Mind Garden"
-                               FontSize="24"
-                               FontWeight="Bold"
-                               Foreground="#334433"
-                               HorizontalAlignment="Center"
-                               Margin="0,0,0,10"/>
-                    <TextBlock Text="Głośność" HorizontalAlignment="Center" Margin="0,5,0,0" Foreground="#334433"/>
-                    <Slider x:Name="VolumeSlider" Width="200" Minimum="0" Maximum="1" Value="0.5" ValueChanged="VolumeSlider_ValueChanged" Margin="0,0,0,15"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,25">
+                        <Image Source="Resources/flower_pink.png" Width="40" Height="40" Margin="0,5,15,0" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+                        <TextBlock Text="Mind Garden"
+                                   FontFamily="Gabriola"
+                                   FontSize="60"
+                                   FontWeight="Bold"
+                                   Foreground="#2E7D32"
+                                   VerticalAlignment="Center">
+                             <TextBlock.Effect>
+                                <DropShadowEffect BlurRadius="4" Color="#81C784" ShadowDepth="2" Opacity="0.4"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <Image Source="Resources/flower_pink.png" Width="40" Height="40" Margin="15,5,0,0" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center">
+                             <Image.LayoutTransform>
+                                <ScaleTransform ScaleX="-1"/>
+                            </Image.LayoutTransform>
+                        </Image>
+                    </StackPanel>
+
                     <Button x:Name="NewGameButton"
                             Content="Nowa gra"
-                            Margin="0,5"
-                            Padding="8"
+                            Style="{StaticResource MenuButtonStyle}"
                             Click="NewGameButton_Click"/>
+                            
+
                     <Button x:Name="ResumeButton"
                             Content="Wznów"
-                            Margin="0,15,0,5"
-                            Padding="8"
-                            Click="ResumeButton_Click" Visibility="Collapsed"/>
+                            Style="{StaticResource MenuButtonStyle}"
+                            Background="#FFD54F"
+                            Foreground="#4E342E" 
+                            Click="ResumeButton_Click" Visibility="Collapsed">
+                         <Button.Resources>
+                             <Style TargetType="Border">
+                                 <Setter Property="CornerRadius" Value="20"/>
+                             </Style>
+                         </Button.Resources>
+                    </Button>
+                    
+
+                    <Button x:Name="ViewGardenButton"
+                            Content="Podziwiaj ogród"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Background="#81D4FA"
+                            Foreground="#01579B" 
+                            Click="ViewGardenButton_Click" Visibility="Collapsed">
+                         <Button.Resources>
+                             <Style TargetType="Border">
+                                 <Setter Property="CornerRadius" Value="20"/>
+                             </Style>
+                         </Button.Resources>
+                    </Button>
+                    
                     <Button x:Name="ExitButton"
                             Content="Wyjdź"
-                            Margin="0,15,0,0"
-                            Padding="8"
-                            Click="ExitButton_Click"/>
+                            Style="{StaticResource MenuButtonStyle}"
+                            Click="ExitButton_Click"
+                            Background="#EF9A9A"
+                            Foreground="#B71C1C"/>
+
+                    <TextBlock Text="Głośność" HorizontalAlignment="Center" Margin="0,15,0,5" Foreground="#556655" FontSize="16"/>
+                    <Slider x:Name="VolumeSlider" Width="220" Minimum="0" Maximum="1" Value="0.5" ValueChanged="VolumeSlider_ValueChanged" Margin="0,0,0,5" IsMoveToPointEnabled="True"/>
 
                 </StackPanel>
             </Border>

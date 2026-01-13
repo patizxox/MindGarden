@@ -19,36 +19,51 @@ namespace MindGarden
         {
             _canvas = canvas;
             _shape.Width = _shape.Height = 80;
-            _shape.Fill = new SolidColorBrush(Color.FromArgb(90, 255, 255, 180));
-            _shape.Stroke = Brushes.White;
-            _shape.StrokeThickness = 1.5;
+
+            var brush = new RadialGradientBrush();
+            brush.GradientStops.Add(new GradientStop(Colors.White, 0.0));
+            brush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 238, 88), 0.4));
+            brush.GradientStops.Add(new GradientStop(Color.FromArgb(0, 255, 215, 0), 1.0));
+            _shape.Fill = brush;
+
+            _shape.Stroke = null;
             _shape.IsHitTestVisible = false;
+
+            var glow = new System.Windows.Media.Effects.DropShadowEffect
+            {
+                Color = Colors.Gold,
+                BlurRadius = 30,
+                ShadowDepth = 0,
+                Opacity = 0.8
+            };
+            _shape.Effect = glow;
         }
 
         public void ShowAt(Point p, double radius = 40)
         {
             _pos = p;
             _radius = radius;
-            _shape.Width = _shape.Height = radius * 2;
+            _shape.Width = _shape.Height = radius * 2.5;
             if (!_canvas.Children.Contains(_shape)) _canvas.Children.Add(_shape);
-            Canvas.SetLeft(_shape, p.X - radius);
-            Canvas.SetTop(_shape, p.Y - radius);
+            Canvas.SetLeft(_shape, p.X - _shape.Width / 2);
+            Canvas.SetTop(_shape, p.Y - _shape.Height / 2);
 
-            var brush = (SolidColorBrush)_shape.Fill;
             var anim = new DoubleAnimation
             {
-                From = 0.35,
-                To = 0.75,
-                Duration = TimeSpan.FromMilliseconds(900),
+                From = 0.6,
+                To = 1.0,
+                Duration = TimeSpan.FromMilliseconds(800),
                 AutoReverse = true,
-                RepeatBehavior = RepeatBehavior.Forever
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseInOut }
             };
-            brush.BeginAnimation(SolidColorBrush.OpacityProperty, anim);
+            _shape.BeginAnimation(UIElement.OpacityProperty, anim);
         }
 
         public void Hide()
         {
             if (_canvas.Children.Contains(_shape)) _canvas.Children.Remove(_shape);
+            _shape.BeginAnimation(UIElement.OpacityProperty, null);
         }
 
         public bool Hit(Point click) =>
