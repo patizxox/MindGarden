@@ -103,6 +103,8 @@ namespace MindGarden
                 GameStage.Stage1 => "Poziom 1",
                 GameStage.Stage2 => "Poziom 2",
                 GameStage.Stage3 => "Poziom 3",
+                GameStage.Stage4 => "Poziom 4",
+                GameStage.Stage5 => "Poziom 5",
                 GameStage.Finished => "Koniec",
                 _ => "Poziom ?"
             };

@@ -98,7 +98,9 @@ namespace MindGarden
             {
                 GameStage.Stage1 => GameStage.Stage2,
                 GameStage.Stage2 => GameStage.Stage3,
-                GameStage.Stage3 => GameStage.Finished,
+                GameStage.Stage3 => GameStage.Stage4,
+                GameStage.Stage4 => GameStage.Stage5,
+                GameStage.Stage5 => GameStage.Finished,
                 _ => GameStage.Finished
             };
             if (Stage == GameStage.Finished)
@@ -133,16 +135,32 @@ namespace MindGarden
                 double y = _rand.Next((int)(r + 40), (int)Math.Max(r + 40, _canvas.ActualHeight - r));
                 p = new Point(x, y);
 
-                foreach (var loc in _plantLocations)
+                // Exclusion zone for top UI
+                double centerX = _canvas.ActualWidth / 2;
+                if (y < 120 && x > centerX - 350 && x < centerX + 350)
                 {
-                    if ((p - loc).Length < 110) // 110px spacing
+                    valid = false;
+                }
+                else
+                {
+                    foreach (var loc in _plantLocations)
                     {
-                        valid = false;
-                        break;
+                        if ((p - loc).Length < 110) // 110px spacing
+                        {
+                            valid = false;
+                            break;
+                        }
                     }
                 }
                 retries++;
-            } while (!valid && retries < 20);
+            } while (!valid && retries < 200);
+
+            if (!valid)
+            {
+                await Task.Delay(200);
+                ScheduleNextSpot();
+                return;
+            }
 
             _spot.ShowAt(p, r);
             _isSpotActive = true;
