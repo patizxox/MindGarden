@@ -151,6 +151,13 @@
                         </Button.Resources>
                     </Button>
 
+                    <Button x:Name="RulesButton"
+                            Content="Zasady gry"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Click="RulesButton_Click"
+                            Background="#DCE775"
+                            Foreground="#827717"/>
+
                     <Button x:Name="ExitButton"
                             Content="Wyjdź"
                             Style="{StaticResource MenuButtonStyle}"
@@ -179,6 +186,32 @@
                 </StackPanel>
             </Border>
         </Grid>
+
+        <Grid x:Name="RulesOverlay" Background="#FDFBF7" Visibility="Collapsed">
+             <ScrollViewer Margin="50,80,50,90" VerticalScrollBarVisibility="Auto">
+                <StackPanel Width="800" HorizontalAlignment="Center">
+                    <TextBlock Text="Zasady Mind Garden" FontSize="36" FontFamily="Gabriola" FontWeight="Bold" Foreground="#33691E" HorizontalAlignment="Center" Margin="0,0,0,30"/>
+                    
+                    <TextBlock Text="1. Sadzenie roślin" FontSize="24" FontWeight="Bold" Foreground="#558B2F" Margin="0,10,0,5"/>
+                    <TextBlock Text="Gdy zobaczysz złote światło, kliknij w nie. Zasadzisz roślinę. Poczekaj cierpliwie, aż wyrośnie, zanim znowu klikniesz." FontSize="18" TextWrapping="Wrap" Foreground="#334433"/>
+
+                    <TextBlock Text="2. Mnożnik wzrostu" FontSize="24" FontWeight="Bold" Foreground="#558B2F" Margin="0,20,0,5"/>
+                    <TextBlock Text="Grasz spokojnie? Mnożnik rośnie. Klikasz chaotycznie lub nie czekasz? Mnożnik spada (min. 0.25x)." FontSize="18" TextWrapping="Wrap" Foreground="#334433"/>
+
+                    <TextBlock Text="3. Goście w ogrodzie (Świetliki)" FontSize="24" FontWeight="Bold" Foreground="#558B2F" Margin="0,20,0,5"/>
+                    <TextBlock Text="Co 20-40 sekund pojawia się żółto-zielona kula. To Twój gość." FontSize="18" TextWrapping="Wrap" Foreground="#334433"/>
+                    <TextBlock Text="• Zastygnij w bezruchu na 3 sekundy → +0.15 do mnożnika na 5 sekund." FontSize="18" TextWrapping="Wrap" Foreground="#334433" Margin="20,5,0,0"/>
+                    <TextBlock Text="• Porusz myszką → Gość ucieknie, kara -0.15 do mnożnika." FontSize="18" TextWrapping="Wrap" Foreground="#334433" Margin="20,5,0,0"/>
+
+                    <TextBlock Text="4. Dziennik Myśli" FontSize="24" FontWeight="Bold" Foreground="#558B2F" Margin="0,20,0,5"/>
+                    <TextBlock Text="Rzadkie, pomarańczowo-różowe światła (10% szans) nie sadzą roślin. Odblokowują myśli i cytaty." FontSize="18" TextWrapping="Wrap" Foreground="#334433"/>
+                </StackPanel>
+            </ScrollViewer>
+            <Button Content="Wróć" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,40"
+                    Style="{StaticResource MenuButtonStyle}" Background="#AED581" Foreground="#33691E"
+                    Click="CloseRules_Click"/>
+        </Grid>
+
         <Grid x:Name="JournalOverlay" Background="#FDFBF7" Visibility="Collapsed">
             <ScrollViewer Margin="50,80,50,50" VerticalScrollBarVisibility="Hidden">
                 <StackPanel x:Name="JournalStack" HorizontalAlignment="Center" Width="800">

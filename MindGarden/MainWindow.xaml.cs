@@ -205,6 +205,18 @@ namespace MindGarden
             MenuOverlay.Visibility = Visibility.Visible;
         }
 
+        private void RulesButton_Click(object sender, RoutedEventArgs e)
+        {
+            RulesOverlay.Visibility = Visibility.Visible;
+            MenuOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void CloseRules_Click(object sender, RoutedEventArgs e)
+        {
+            RulesOverlay.Visibility = Visibility.Collapsed;
+            MenuOverlay.Visibility = Visibility.Visible;
+        }
+
         private void PopulateJournal()
         {
             JournalStack.Children.Clear();
