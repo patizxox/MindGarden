@@ -13,6 +13,7 @@ namespace MindGarden
         private Point _pos;
         private double _radius;
 
+        private bool _isVisible;
         public Rect Bounds => new(_pos.X - _radius, _pos.Y - _radius, _radius * 2, _radius * 2);
 
         public LightSpot(Canvas canvas)
@@ -43,6 +44,7 @@ namespace MindGarden
         {
             _pos = p;
             _radius = radius;
+            _isVisible = true;
             _shape.Width = _shape.Height = radius * 2.5;
             if (!_canvas.Children.Contains(_shape)) _canvas.Children.Add(_shape);
             Canvas.SetLeft(_shape, p.X - _shape.Width / 2);
@@ -62,12 +64,16 @@ namespace MindGarden
 
         public void Hide()
         {
+            _isVisible = false;
             if (_canvas.Children.Contains(_shape)) _canvas.Children.Remove(_shape);
             _shape.BeginAnimation(UIElement.OpacityProperty, null);
         }
 
-        public bool Hit(Point click) =>
-            (click.X - _pos.X) * (click.X - _pos.X) + (click.Y - _pos.Y) * (click.Y - _pos.Y) <= _radius * _radius;
+        public bool Hit(Point click)
+        {
+            if (!_isVisible) return false;
+            return (click.X - _pos.X) * (click.X - _pos.X) + (click.Y - _pos.Y) * (click.Y - _pos.Y) <= _radius * _radius;
+        }
     }
 
 }

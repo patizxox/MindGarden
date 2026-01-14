@@ -20,27 +20,54 @@ namespace MindGarden
         public event Action? StageAdvanced;
         public event Action? Finished;
 
-        public GameController(Canvas canvas, Dictionary<GameStage, StageConfig> cfg, Random rand)
+        private bool _isSpotActive;
+        private bool _isPlantGrowing;
+
+        public GameController(Canvas canvas, Dictionary<GameStage, StageConfig> cfg, Random rand, GameState? state = null)
         {
             _canvas = canvas;
             _cfg = cfg;
             _rand = rand;
             _spot = new LightSpot(canvas);
+
+            if (state != null)
+            {
+                Stage = state.Stage;
+                GrowthMultiplier = state.Multiplier;
+                Hits = state.Hits;
+                Misses = state.Misses;
+            }
+
             ScheduleNextSpot();
         }
 
-        public void OnClick(Point p, Action<Point> onPlant)
+        public void OnClick(Point p, Func<Point, TimeSpan> onPlant)
         {
             if (_paused) return;
 
-            if (_spot.Hit(p))
+            if (_isSpotActive && _spot.Hit(p))
             {
-                Hits++;
-                onPlant(p);
-                PlantsThisStage++;
-                GrowthMultiplier = Math.Min(1.5, GrowthMultiplier + 0.02);
-                if (PlantsThisStage >= _cfg[Stage].LightsPerStage) NextStage();
-                else ScheduleNextSpot();
+                if (_isPlantGrowing)
+                {
+                    Misses++;
+                    GrowthMultiplier = Math.Max(0.5, GrowthMultiplier - 0.05);
+                }
+                else
+                {
+                    _isSpotActive = false;
+                    Hits++;
+                    _plantLocations.Add(p);
+                    
+                    var growthDuration = onPlant(p);
+                    
+                    _isPlantGrowing = true;
+                    Task.Delay(growthDuration).ContinueWith(_ => _isPlantGrowing = false);
+
+                    PlantsThisStage++;
+                    GrowthMultiplier = Math.Min(1.5, GrowthMultiplier + 0.1);
+                    if (PlantsThisStage >= _cfg[Stage].LightsPerStage) NextStage();
+                    else ScheduleNextSpot();
+                }
             }
             else
             {
@@ -52,6 +79,7 @@ namespace MindGarden
         {
             _paused = true;
             _spot.Hide();
+            _isSpotActive = false;
         }
 
         public void Resume()
@@ -63,6 +91,7 @@ namespace MindGarden
 
         private void NextStage()
         {
+            _isSpotActive = false;
             _spot.Hide();
             PlantsThisStage = 0;
             Stage = Stage switch
@@ -81,18 +110,42 @@ namespace MindGarden
             ScheduleNextSpot();
         }
 
+        private readonly List<Point> _plantLocations = new();
+
         private async void ScheduleNextSpot()
         {
+            _isSpotActive = false;
             _spot.Hide();
             var s = _cfg[Stage];
             var delay = _rand.Next((int)s.LightMinDelay.TotalMilliseconds, (int)s.LightMaxDelay.TotalMilliseconds);
             await Task.Delay(delay);
             if (_paused || Stage == GameStage.Finished) return;
 
+            Point p;
+            int retries = 0;
+            bool valid;
             double r = 40;
-            double x = _rand.Next((int)r, (int)Math.Max(r, _canvas.ActualWidth - r));
-            double y = _rand.Next((int)(r + 40), (int)Math.Max(r + 40, _canvas.ActualHeight - r));
-            _spot.ShowAt(new Point(x, y), r);
+
+            do
+            {
+                valid = true;
+                double x = _rand.Next((int)r, (int)Math.Max(r, _canvas.ActualWidth - r));
+                double y = _rand.Next((int)(r + 40), (int)Math.Max(r + 40, _canvas.ActualHeight - r));
+                p = new Point(x, y);
+
+                foreach (var loc in _plantLocations)
+                {
+                    if ((p - loc).Length < 110) // 110px spacing
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+                retries++;
+            } while (!valid && retries < 20);
+
+            _spot.ShowAt(p, r);
+            _isSpotActive = true;
         }
     }
 

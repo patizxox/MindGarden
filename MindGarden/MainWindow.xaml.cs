@@ -4,9 +4,6 @@ using System.Windows.Media.Animation;
 using System.Windows.Media;
 namespace MindGarden
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private bool _menuOpen = true;
@@ -15,13 +12,16 @@ namespace MindGarden
         private GameController? _game;
         private Dictionary<GameStage, StageConfig> _stages = null!;
         private MediaPlayer _bgMusic = new();
+        private readonly List<Seed> _pendingSeeds = new();
 
         public MainWindow()
         {
             InitializeComponent();
             StartDayNightCycle();
             InitializeBackgroundMusic();
+
             ShowCalmMessage("Witaj w Mind Garden. Zacznij, gdy będziesz gotowa.");
+            if (SaveManager.HasSave()) ContinueButton.Visibility = Visibility.Visible;
         }
 
         private void InitializeBackgroundMusic()
@@ -43,17 +43,25 @@ namespace MindGarden
             }
         }
 
-        private void StartNewGame()
+        private void StartNewGame(GameState? state = null)
         {
+            foreach (var seed in _pendingSeeds) seed.Stop();
+            _pendingSeeds.Clear();
+
             GardenCanvas.Children.Clear();
-            _plantCount = 0;
+            _plantCount = state?.TotalPlants ?? 0;
             _stages = GamePresets.GetPresets();
-            _game = new GameController(GardenCanvas, _stages, _rand);
-            _game.StageAdvanced += () => ShowCalmMessage("Świetnie. Widzisz, jak ogród rośnie, kiedy dajesz mu czas.");
+            _game = new GameController(GardenCanvas, _stages, _rand, state);
+            _game.StageAdvanced += () => 
+            {
+                ShowCalmMessage("Świetnie. Widzisz, jak ogród rośnie, kiedy dajesz mu czas.");
+                SaveProgress();
+            };
             _game.Finished += ShowSummary;
             _menuOpen = false;
             MenuOverlay.Visibility = Visibility.Collapsed;
             ResumeButton.Visibility = Visibility.Visible;
+            ContinueButton.Visibility = Visibility.Collapsed;
             ViewGardenButton.Visibility = Visibility.Collapsed;
             UpdateHud();
             ShowCalmMessage("Skup się na światełku, kliknij i poczekaj, aż nasiono wyrośnie.");
@@ -69,11 +77,16 @@ namespace MindGarden
                 var cfg = _stages[_game.Stage];
                 var baseMs = _rand.Next((int)cfg.GrowMin.TotalMilliseconds, (int)cfg.GrowMax.TotalMilliseconds);
                 var growMs = (int)(baseMs / Math.Max(0.1, _game.GrowthMultiplier));
+                var duration = TimeSpan.FromMilliseconds(growMs);
 
-                _ = new Seed(GardenCanvas, pos.X, pos.Y, _rand, TimeSpan.FromMilliseconds(growMs));
+                var seed = new Seed(GardenCanvas, pos.X, pos.Y, _rand, duration);
+                _pendingSeeds.Add(seed);
+                seed.OnGrown += s => _pendingSeeds.Remove(s);
                 _plantCount++;
                 UpdateHud();
                 ShowCalmMessage("Trafiłaś w światło. Teraz nasiono potrzebuje czasu, żeby wyrosnąć.");
+                
+                return duration;
             });
         }
 
@@ -144,6 +157,28 @@ namespace MindGarden
         private void NewGameButton_Click(object sender, RoutedEventArgs e)
         {
             StartNewGame();
+        }
+
+        private void ContinueButton_Click(object sender, RoutedEventArgs e)
+        {
+            var state = SaveManager.Load();
+            if (state != null)
+            {
+                StartNewGame(state);
+            }
+        }
+
+        private void SaveProgress()
+        {
+            if (_game == null) return;
+            var state = new GameState(
+                _game.Stage,
+                _plantCount,
+                _game.GrowthMultiplier,
+                _game.Hits,
+                _game.Misses
+            );
+            SaveManager.Save(state);
         }
 
         private void ResumeButton_Click(object sender, RoutedEventArgs e)

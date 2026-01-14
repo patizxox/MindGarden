@@ -140,13 +140,21 @@ internal class Seed
         StartShake(3.0, 100);
     }
 
+    public void Stop()
+    {
+        _sproutTimer.Stop();
+        _preCueTimer.Stop();
+        StopShake();
+        if (_canvas.Children.Contains(_ellipse)) _canvas.Children.Remove(_ellipse);
+    }
+
     private void Grow(object? sender, EventArgs e)
     {
         _sproutTimer.Stop();
         _preCueTimer.Stop();
         StopShake();
 
-        _canvas.Children.Remove(_ellipse);
+        if (_canvas.Children.Contains(_ellipse)) _canvas.Children.Remove(_ellipse);
 
         string[] files = Directory.GetFiles(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources"), "*.png");
         string randomFile = files[_rand.Next(files.Length)];
@@ -175,7 +183,12 @@ internal class Seed
         };
         ((ScaleTransform)img.RenderTransform).BeginAnimation(ScaleTransform.ScaleXProperty, pop);
         ((ScaleTransform)img.RenderTransform).BeginAnimation(ScaleTransform.ScaleYProperty, pop);
+        
+        OnGrown?.Invoke(this);
     }
+    
+    public event Action<Seed>? OnGrown;
+
     private static ImageSource LoadFromFile(string path)
     {
         var bmp = new BitmapImage();

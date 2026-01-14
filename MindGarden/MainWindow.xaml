@@ -110,6 +110,14 @@
                         </Image>
                     </StackPanel>
 
+                    <Button x:Name="ContinueButton"
+                            Content="Kontynuuj"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Background="#90CAF9"
+                            Foreground="#0D47A1"
+                            Click="ContinueButton_Click"
+                            Visibility="Collapsed"/>
+
                     <Button x:Name="NewGameButton"
                             Content="Nowa gra"
                             Style="{StaticResource MenuButtonStyle}"
