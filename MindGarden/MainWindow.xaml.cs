@@ -2,6 +2,9 @@
 using System.Windows.Input;
 using System.Windows.Media.Animation;
 using System.Windows.Media;
+using System.Linq;
+using System.Collections.Generic;
+using System.Windows.Controls;
 namespace MindGarden
 {
     public partial class MainWindow : Window
@@ -21,7 +24,11 @@ namespace MindGarden
             InitializeBackgroundMusic();
 
             ShowCalmMessage("Witaj w Mind Garden. Zacznij, gdy będziesz gotowa.");
-            if (SaveManager.HasSave()) ContinueButton.Visibility = Visibility.Visible;
+            if (SaveManager.HasSave()) 
+            {
+                ContinueButton.Visibility = Visibility.Visible;
+                JournalButton.Visibility = Visibility.Visible;
+            }
         }
 
         private void InitializeBackgroundMusic()
@@ -58,11 +65,15 @@ namespace MindGarden
                 SaveProgress();
             };
             _game.Finished += ShowSummary;
+            _game.QuoteUnlocked += OnQuoteUnlocked;
+            _game.GuestInteraction += OnGuestInteraction;
+
             _menuOpen = false;
             MenuOverlay.Visibility = Visibility.Collapsed;
             ResumeButton.Visibility = Visibility.Visible;
             ContinueButton.Visibility = Visibility.Collapsed;
             ViewGardenButton.Visibility = Visibility.Collapsed;
+            JournalButton.Visibility = Visibility.Visible;
             UpdateHud();
             ShowCalmMessage("Skup się na światełku, kliknij i poczekaj, aż nasiono wyrośnie.");
         }
@@ -138,6 +149,124 @@ namespace MindGarden
                 $"{GetStatsString()}\n" +
                 $"Zatrzymaj się na chwilę i popatrz na swój ogród."
             );
+
+        }
+
+        private void OnQuoteUnlocked(Quote quote)
+        {
+            PopupQuoteText.Text = $"\"{quote.Text}\"";
+            PopupAuthorText.Text = $"- {quote.Author}";
+            
+            QuotePopup.Visibility = Visibility.Visible;
+            
+            var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(500));
+            QuotePopup.BeginAnimation(OpacityProperty, fadeIn);
+
+
+            Task.Delay(5000).ContinueWith(_ => Dispatcher.Invoke(() => 
+            {
+                 var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(500));
+                 fadeOut.Completed += (s, e) => QuotePopup.Visibility = Visibility.Collapsed;
+                 QuotePopup.BeginAnimation(OpacityProperty, fadeOut);
+            }));
+        }
+
+        private void OnGuestInteraction(bool success)
+        {
+            if (success)
+            {
+                ShowCalmMessage("Gość zostawił pyłek! +0.15 do mnożnika na 5 sekund.");
+            }
+            else
+            {
+                ShowCalmMessage("Wystraszyłaś gościa! -0.15 do mnożnika.");
+            }
+            SaveProgress();
+            UpdateHud();
+        }
+
+        private void GardenCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_game == null) return;
+            var p = e.GetPosition(GardenCanvas);
+            _game.OnMouseMove(p);
+        }
+
+        private void JournalButton_Click(object sender, RoutedEventArgs e)
+        {
+            PopulateJournal();
+            JournalOverlay.Visibility = Visibility.Visible;
+            MenuOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void CloseJournal_Click(object sender, RoutedEventArgs e)
+        {
+            JournalOverlay.Visibility = Visibility.Collapsed;
+            MenuOverlay.Visibility = Visibility.Visible;
+        }
+
+        private void PopulateJournal()
+        {
+            JournalStack.Children.Clear();
+            var state = SaveManager.Load();
+            var unlockedIds = state?.UnlockedQuotes ?? new List<int>();
+
+            if (unlockedIds.Count == 0)
+            {
+                 var empty = new TextBlock 
+                 { 
+                     Text = "Jeszcze nie odkryłaś żadnych myśli.\nSzukaj rzadkich, kolorowych świateł w ogrodzie.",
+                     TextAlignment = TextAlignment.Center,
+                     FontSize = 18,
+                     Foreground = new SolidColorBrush(Color.FromRgb(100, 100, 100)),
+                     Margin = new Thickness(0, 50, 0, 0),
+                     FontFamily = new FontFamily("Gabriola")
+                 };
+                 JournalStack.Children.Add(empty);
+                 return;
+            }
+
+            foreach (var id in unlockedIds)
+            {
+                var quote = QuotesData.All.FirstOrDefault(q => q.Id == id);
+                if (quote != null)
+                {
+                    var border = new Border 
+                    { 
+                        Background = new SolidColorBrush(Color.FromRgb(255, 243, 224)),
+                        CornerRadius = new CornerRadius(10),
+                        Padding = new Thickness(20),
+                        Margin = new Thickness(0, 0, 0, 15),
+                        BorderBrush = new SolidColorBrush(Color.FromRgb(255, 204, 128)),
+                        BorderThickness = new Thickness(1)
+                    };
+
+                    var sp = new StackPanel();
+                    var txt = new TextBlock 
+                    { 
+                        Text = $"\"{quote.Text}\"",
+                        FontSize = 20,
+                        FontFamily = new FontFamily("Gabriola"),
+                        Foreground = new SolidColorBrush(Color.FromRgb(191, 54, 12)),
+                        TextWrapping = TextWrapping.Wrap,
+                         TextAlignment = TextAlignment.Center
+                    };
+                    var auth = new TextBlock 
+                    { 
+                        Text = $"- {quote.Author}",
+                        FontSize = 16,
+                        Foreground = new SolidColorBrush(Color.FromRgb(230, 81, 0)),
+                        HorizontalAlignment = HorizontalAlignment.Right,
+                        Margin = new Thickness(0, 5, 0, 0),
+                        FontStyle = FontStyles.Italic
+                    };
+
+                    sp.Children.Add(txt);
+                    sp.Children.Add(auth);
+                    border.Child = sp;
+                    JournalStack.Children.Add(border);
+                }
+            }
         }
 
         private void StartDayNightCycle()
@@ -173,12 +302,16 @@ namespace MindGarden
         private void SaveProgress()
         {
             if (_game == null) return;
+            var oldState = SaveManager.Load();
+            var quotes = oldState?.UnlockedQuotes;
+
             var state = new GameState(
                 _game.Stage,
                 _plantCount,
                 _game.GrowthMultiplier,
                 _game.Hits,
-                _game.Misses
+                _game.Misses,
+                quotes
             );
             SaveManager.Save(state);
         }

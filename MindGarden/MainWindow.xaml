@@ -55,7 +55,7 @@
     </Window.Resources>
     
     <Grid>
-        <Canvas Name="GardenCanvas" Background="#EAF7E5" MouseLeftButtonDown="GardenCanvas_MouseLeftButtonDown">
+        <Canvas Name="GardenCanvas" Background="#EAF7E5" MouseLeftButtonDown="GardenCanvas_MouseLeftButtonDown" MouseMove="GardenCanvas_MouseMove">
         </Canvas>
         <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,30,0,0"
                 Background="#DDFFFFFF" CornerRadius="25" Padding="40,5">
@@ -99,12 +99,12 @@
                                    FontWeight="Bold"
                                    Foreground="#2E7D32"
                                    VerticalAlignment="Center">
-                             <TextBlock.Effect>
+                            <TextBlock.Effect>
                                 <DropShadowEffect BlurRadius="4" Color="#81C784" ShadowDepth="2" Opacity="0.4"/>
                             </TextBlock.Effect>
                         </TextBlock>
                         <Image Source="Resources/flower_pink.png" Width="40" Height="40" Margin="15,5,0,0" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center">
-                             <Image.LayoutTransform>
+                            <Image.LayoutTransform>
                                 <ScaleTransform ScaleX="-1"/>
                             </Image.LayoutTransform>
                         </Image>
@@ -122,7 +122,7 @@
                             Content="Nowa gra"
                             Style="{StaticResource MenuButtonStyle}"
                             Click="NewGameButton_Click"/>
-                            
+
 
                     <Button x:Name="ResumeButton"
                             Content="Wznów"
@@ -130,13 +130,13 @@
                             Background="#FFD54F"
                             Foreground="#4E342E" 
                             Click="ResumeButton_Click" Visibility="Collapsed">
-                         <Button.Resources>
-                             <Style TargetType="Border">
-                                 <Setter Property="CornerRadius" Value="20"/>
-                             </Style>
-                         </Button.Resources>
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="20"/>
+                            </Style>
+                        </Button.Resources>
                     </Button>
-                    
+
 
                     <Button x:Name="ViewGardenButton"
                             Content="Podziwiaj ogród"
@@ -144,13 +144,13 @@
                             Background="#81D4FA"
                             Foreground="#01579B" 
                             Click="ViewGardenButton_Click" Visibility="Collapsed">
-                         <Button.Resources>
-                             <Style TargetType="Border">
-                                 <Setter Property="CornerRadius" Value="20"/>
-                             </Style>
-                         </Button.Resources>
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="20"/>
+                            </Style>
+                        </Button.Resources>
                     </Button>
-                    
+
                     <Button x:Name="ExitButton"
                             Content="Wyjdź"
                             Style="{StaticResource MenuButtonStyle}"
@@ -158,9 +158,50 @@
                             Background="#EF9A9A"
                             Foreground="#B71C1C"/>
 
+                    <Button x:Name="JournalButton"
+                            Content="Dziennik Myśli"
+                            Style="{StaticResource MenuButtonStyle}"
+                            Background="#FFCCBC"
+                            Foreground="#BF360C"
+                            Margin="0,25,0,0"
+                            Click="JournalButton_Click"
+                            Visibility="Collapsed">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="20"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+
                     <TextBlock Text="Głośność" HorizontalAlignment="Center" Margin="0,15,0,5" Foreground="#556655" FontSize="16"/>
                     <Slider x:Name="VolumeSlider" Width="220" Minimum="0" Maximum="1" Value="0.5" ValueChanged="VolumeSlider_ValueChanged" Margin="0,0,0,5" IsMoveToPointEnabled="True"/>
 
+                </StackPanel>
+            </Border>
+        </Grid>
+        <Grid x:Name="JournalOverlay" Background="#FDFBF7" Visibility="Collapsed">
+            <ScrollViewer Margin="50,80,50,50" VerticalScrollBarVisibility="Hidden">
+                <StackPanel x:Name="JournalStack" HorizontalAlignment="Center" Width="800">
+                </StackPanel>
+            </ScrollViewer>
+
+            <TextBlock Text="Dziennik Myśli" 
+                        HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,30,0,0"
+                        FontSize="36" FontFamily="Gabriola" FontWeight="Bold" Foreground="#BF360C"/>
+
+            <Button Content="Wróć" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,30"
+                     Style="{StaticResource MenuButtonStyle}" Background="#FFAB91" Foreground="White"
+                     Click="CloseJournal_Click"/>
+        </Grid>
+        <Grid x:Name="QuotePopup" Visibility="Collapsed" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,150,0,0">
+            <Border Background="#FFF3E0" CornerRadius="15" Padding="30,20" BorderBrush="#FFecb3" BorderThickness="2">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.3"/>
+                </Border.Effect>
+                <StackPanel>
+                    <TextBlock Text="Nowa Myśl Odblokowana" FontSize="14" Foreground="#FF9800" HorizontalAlignment="Center" Margin="0,0,0,10" FontWeight="Bold"/>
+                    <TextBlock x:Name="PopupQuoteText" Text="..." FontSize="20" FontFamily="Gabriola" Foreground="#E65100" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="400"/>
+                    <TextBlock x:Name="PopupAuthorText" Text="..." FontSize="16" Foreground="#FB8C00" HorizontalAlignment="Right" Margin="0,10,0,0" FontStyle="Italic"/>
                 </StackPanel>
             </Border>
         </Grid>

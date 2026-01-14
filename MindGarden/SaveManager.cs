@@ -1,15 +1,30 @@
 using System.IO;
 using System.Text.Json;
+using System.Collections.Generic;
 
 namespace MindGarden
 {
-    public record GameState(
-        GameStage Stage,
-        int TotalPlants,
-        double Multiplier,
-        int Hits,
-        int Misses
-    );
+    public class GameState
+    {
+        public GameStage Stage { get; set; }
+        public int TotalPlants { get; set; }
+        public double Multiplier { get; set; }
+        public int Hits { get; set; }
+        public int Misses { get; set; }
+        public List<int> UnlockedQuotes { get; set; } = new();
+
+        public GameState() { }
+
+        public GameState(GameStage stage, int totalPlants, double multiplier, int hits, int misses, List<int>? unlockedQuotes = null)
+        {
+            Stage = stage;
+            TotalPlants = totalPlants;
+            Multiplier = multiplier;
+            Hits = hits;
+            Misses = misses;
+            UnlockedQuotes = unlockedQuotes ?? new List<int>();
+        }
+    }
 
     public static class SaveManager
     {

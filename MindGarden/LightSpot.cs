@@ -20,19 +20,36 @@ namespace MindGarden
         {
             _canvas = canvas;
             _shape.Width = _shape.Height = 80;
-
-            var brush = new RadialGradientBrush();
-            brush.GradientStops.Add(new GradientStop(Colors.White, 0.0));
-            brush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 238, 88), 0.4));
-            brush.GradientStops.Add(new GradientStop(Color.FromArgb(0, 255, 215, 0), 1.0));
-            _shape.Fill = brush;
+            SetType(false);
 
             _shape.Stroke = null;
             _shape.IsHitTestVisible = false;
+        }
+
+        public bool IsSpecial { get; private set; }
+
+        public void SetType(bool isSpecial)
+        {
+            IsSpecial = isSpecial;
+            var brush = new RadialGradientBrush();
+            brush.GradientStops.Add(new GradientStop(Colors.White, 0.0));
+            
+            if (isSpecial)
+            {
+                 brush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 183, 77), 0.4));
+                 brush.GradientStops.Add(new GradientStop(Color.FromRgb(240, 98, 146), 1.0));
+            }
+            else
+            {
+                brush.GradientStops.Add(new GradientStop(Color.FromRgb(255, 238, 88), 0.4));
+                brush.GradientStops.Add(new GradientStop(Color.FromArgb(0, 255, 215, 0), 1.0));
+            }
+            
+            _shape.Fill = brush;
 
             var glow = new System.Windows.Media.Effects.DropShadowEffect
             {
-                Color = Colors.Gold,
+                Color = isSpecial ? Colors.HotPink : Colors.Gold,
                 BlurRadius = 30,
                 ShadowDepth = 0,
                 Opacity = 0.8

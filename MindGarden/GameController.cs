@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Linq;
 
 namespace MindGarden
 {
@@ -19,6 +20,7 @@ namespace MindGarden
 
         public event Action? StageAdvanced;
         public event Action? Finished;
+        public event Action<Quote>? QuoteUnlocked;
 
         private bool _isSpotActive;
         private bool _isPlantGrowing;
@@ -50,11 +52,19 @@ namespace MindGarden
                 if (_isPlantGrowing)
                 {
                     Misses++;
-                    GrowthMultiplier = Math.Max(0.5, GrowthMultiplier - 0.05);
+                    GrowthMultiplier = Math.Max(0.25, GrowthMultiplier - 0.05);
                 }
                 else
                 {
                     _isSpotActive = false;
+                    
+                    if (_spot.IsSpecial)
+                    {
+                         UnlockRandomQuote();
+                         ScheduleNextSpot();
+                         return;
+                    }
+
                     Hits++;
                     _plantLocations.Add(p);
                     
@@ -72,7 +82,7 @@ namespace MindGarden
             else
             {
                 Misses++;
-                GrowthMultiplier = Math.Max(0.5, GrowthMultiplier - 0.05);
+                GrowthMultiplier = Math.Max(0.25, GrowthMultiplier - 0.05);
             }
         }
         public void Pause()
@@ -114,6 +124,37 @@ namespace MindGarden
 
         private readonly List<Point> _plantLocations = new();
 
+        private void UnlockRandomQuote()
+        {
+            var savedState = SaveManager.Load();
+            var unlockedIds = savedState?.UnlockedQuotes ?? new List<int>();
+
+            var lockedQuotes = QuotesData.All.Where(q => !unlockedIds.Contains(q.Id)).ToList();
+            
+            if (lockedQuotes.Count > 0)
+            {
+                var q = lockedQuotes[_rand.Next(lockedQuotes.Count)];
+                unlockedIds.Add(q.Id);
+                
+                QuoteUnlocked?.Invoke(q);
+                
+                if (savedState == null)
+                {
+                    savedState = new GameState(Stage, PlantsThisStage, GrowthMultiplier, Hits, Misses, unlockedIds);
+                }
+                else
+                {
+                    savedState.UnlockedQuotes = unlockedIds;
+                    savedState.Stage = Stage;
+                    savedState.TotalPlants = PlantsThisStage;
+                    savedState.Multiplier = GrowthMultiplier;
+                    savedState.Hits = Hits;
+                    savedState.Misses = Misses;
+                }
+                SaveManager.Save(savedState);
+            }
+        }
+
         private async void ScheduleNextSpot()
         {
             _isSpotActive = false;
@@ -135,7 +176,6 @@ namespace MindGarden
                 double y = _rand.Next((int)(r + 40), (int)Math.Max(r + 40, _canvas.ActualHeight - r));
                 p = new Point(x, y);
 
-                // Exclusion zone for top UI
                 double centerX = _canvas.ActualWidth / 2;
                 if (y < 120 && x > centerX - 350 && x < centerX + 350)
                 {
@@ -145,7 +185,7 @@ namespace MindGarden
                 {
                     foreach (var loc in _plantLocations)
                     {
-                        if ((p - loc).Length < 110) // 110px spacing
+                        if ((p - loc).Length < 110)
                         {
                             valid = false;
                             break;
@@ -162,9 +202,98 @@ namespace MindGarden
                 return;
             }
 
+            bool isSpecial = _rand.NextDouble() < 0.10;
+            _spot.SetType(isSpecial);
+
             _spot.ShowAt(p, r);
             _isSpotActive = true;
+            
+            ScheduleNextGuest();
         }
-    }
 
+        private GardenGuest? _guest;
+        private bool _guestActive;
+        private Point _lastMousePos;
+        private DateTime _stillSince;
+        private bool _isStill;
+
+        private async void ScheduleNextGuest()
+        {
+            if (_guestActive) return;
+
+            int delay = _rand.Next(20000, 40000);
+            await Task.Delay(delay);
+
+            if (_paused || Stage == GameStage.Finished || _guestActive) return;
+
+            if (_guest == null) _guest = new GardenGuest(_canvas);
+
+            double x = _rand.Next(100, (int)_canvas.ActualWidth - 100);
+            double y = _rand.Next(100, (int)_canvas.ActualHeight - 100);
+            
+            _guest.ShowAt(new Point(x, y));
+            _guestActive = true;
+            _isStill = true;
+            _stillSince = DateTime.Now;
+            CheckGuestTame();
+        }
+
+        public void OnMouseMove(Point p)
+        {
+            double speed = (p - _lastMousePos).Length;
+            _lastMousePos = p;
+
+            if (!_guestActive) return;
+
+            if (speed > 10.0)
+            {
+                _isStill = false;
+                _guest?.Flee();
+                _guestActive = false;
+                
+                GrowthMultiplier = Math.Max(0.25, GrowthMultiplier - 0.15);
+                GuestInteraction?.Invoke(false);
+                
+                ScheduleNextGuest();
+            }
+            else
+            {
+                if (!_isStill)
+                {
+                    _isStill = true;
+                    _stillSince = DateTime.Now;
+                    CheckGuestTame();
+                }
+            }
+        }
+
+        private async void CheckGuestTame()
+        {
+            while (_guestActive && _isStill)
+            {
+                if ((DateTime.Now - _stillSince).TotalSeconds >= 3.0)
+                {
+                    _guest?.Success();
+                    _guestActive = false;
+                    
+                    GrowthMultiplier += 0.15;
+                    GuestInteraction?.Invoke(true);
+                    
+                    await Task.Delay(5000);
+                    if (!_paused && Stage != GameStage.Finished)
+                    {
+                        GrowthMultiplier = Math.Max(0.25, GrowthMultiplier - 0.15);
+                        StageAdvanced?.Invoke();
+                    }
+
+                    ScheduleNextGuest();
+                    return;
+                }
+                await Task.Delay(100);
+            }
+        }
+
+        public event Action<bool>? GuestInteraction;
+
+}
 }
